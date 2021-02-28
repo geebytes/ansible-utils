@@ -1,17 +1,22 @@
+# docker 版本
 DOCKER_VERSION: "18.09.9"
 
+# docker-compose版本
 DOCKER_COMPOSE: "1.28.5"
 
+# 安装路径
 DOCKER_INSTALL_PATH: "/data/work/usr/bin"
 
+# 数据存储
 DOCKER_DATA_PATH: "/data/work/docker"
 
+# 配置文件
 DOCKER_CONFIG_PATH: "/data/work/etc/docker"
-
+# unix socket文件
 SOCKET_FILE_PATH: "/data/work/run"
-
+# 日志路径
 LOGS_DIR: "/data/work/logs/docker"
-
+# supervisor 进程用户
 SUPERVISORD_USER: "root"
 
 

@@ -62,12 +62,11 @@ test_plugins       = /usr/local/lib/python3.7/site-packages/ansible/plugins/test
 | 00.Python-installer.yml      | Python批量安装部署，支持离线安装 |      |
 | 01.Pyenv-installer.yml       | Pyenv批量安装部署                |      |
 | 02.Supervisord-installer.yml | supervisord批量安装部署          |      |
+| 03.Docker-installer.yml      | docker安装部署                   |      |
 
 #### 5.2. 执行playbooks
 
 以Python安装部署为例
-
-
 
 ##### 5.2.1. 修改配置参数
 
