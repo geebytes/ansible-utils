@@ -1,0 +1,21 @@
+# 解释器绝对路径或默认解释器
+PYTHON_INTERPRETER: "python3"
+
+# supervisord用户
+USER: "root"
+GROUP: "root"
+
+# 文件路径配置
+# supervisord.conf 路径
+SUPERVISORD_CONF_PATH: "/data/work/etc"
+# 进程管理配置文件路径
+PROGRAM_INI_PATH: "/data/work/etc/supervisord"
+# socket file path
+SOCKET_FILE_PATH: "/data/work/run"
+# logs dir
+LOGS_DIR: "/data/work/logs/supervisord"
+
+# supervisord reload shell script dir
+RELOAD_SCRIPT_DIR: "/data/work/supervisord"
+
+

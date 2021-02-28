@@ -1,0 +1,19 @@
+[develop]
+192.168.31.158
+[nodes]
+192.168.31.2
+192.168.31.3
+192.168.31.4
+192.168.31.5
+192.168.31.6
+192.168.31.7
+192.168.31.8
+[all:vars]
+# ---------附加参数--------------------
+#默认二进制文件目录
+work_dir="/data/work/platform/source/matrix/platform/source/ansible-utils"
+
+# 各类源码包
+packages="/data/work/platform/source/matrix/platform/source/ansible-utils/packages"
+
+

@@ -1,0 +1,11 @@
+# 各类变量
+
+# Python版本号
+PYTHON_VERSION: "3.7.9"
+
+# Python安装路径
+INSTALL_PATH: "/usr/local"
+
+PIP_INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+SET_PIP_INDEX: yes

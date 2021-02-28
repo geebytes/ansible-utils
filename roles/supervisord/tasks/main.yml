@@ -1,0 +1,36 @@
+- name: 创建相关目录
+  file: name={{ item }} state=directory
+  with_items:
+    - "{{ SUPERVISORD_CONF_PATH }}"
+    - "{{ PROGRAM_INI_PATH }}"
+    - "{{ SOCKET_FILE_PATH }}"
+    - "{{ LOGS_DIR }}"
+    - "{{ RELOAD_SCRIPT_DIR }}"
+- name: Pip安装supervisord
+  shell: "{{ PYTHON_INTERPRETER }} -m pip install supervisor"
+
+- name: 分发supervisord 配置文件
+  template: src=supervisord.conf.j2 dest={{ SUPERVISORD_CONF_PATH }}/supervisord.conf
+  tags: supervisord_install
+
+- name: 分发supervisord 重启文件
+  template: src=reload_supervisord.sh.j2 dest={{ RELOAD_SCRIPT_DIR }}/reload_supervisord.sh mode=0775
+  tags: supervisord_install
+
+- name: 分发平台supervisord开机启动配置文件
+  template: src=matrix.j2 dest=/etc/init.d/matrix
+
+- name: 创建supervisord日志文件
+  file: path={{ LOGS_DIR }}/supervisord.log state=touch
+
+- name: supervisord开机启动设置
+  shell: "cd /etc/init.d && chmod +x matrix && chkconfig --add matrix && chkconfig matrix on"
+
+- name: 启动 supervisord
+  shell: "supervisord -c {{ SUPERVISORD_CONF_PATH }}/supervisord.conf"
+  ignore_errors: true
+
+- name: 再次检查supervisord进程是否启动
+  shell: pgrep supervisord | wc -l
+  register: result
+  failed_when: result.stdout|int == 0

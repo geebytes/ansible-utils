@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+PID=$(netstat -nulpt | grep :9001 | awk '{print $7}' | awk -F"/" '{ print $1 }');
+if [ -n "${PID}" ];
+then
+    supervisorctl reload
+else
+    supervisord -c {{ SUPERVISORD_CONF_PATH }}/supervisord.conf
+fi

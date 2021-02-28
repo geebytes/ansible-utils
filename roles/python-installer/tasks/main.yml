@@ -1,0 +1,82 @@
+# - import_tasks: update-kernel.yml
+- name: 创建源代码存储相关目录
+  file: name={{ item }} state=directory
+  with_items:
+    - "{{ packages }}"
+
+- name: 安装依赖
+  yum:
+    name:
+      - zlib-devel
+      - bzip2
+      - bzip2-devel
+      - readline-devel
+      - sqlite
+      - sqlite-devel
+      - openssl-devel
+      - xz
+      - xz-devel
+      - libffi-devel
+      - findutils
+      - gcc
+      - gcc-c++
+      - git
+      - curl
+      - libffi-devel
+      - wget
+    state: present
+    validate_certs: no
+  when: inventory_hostname in groups["nodes"]
+
+- name: 安装包路径
+  debug:
+    msg: "{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz"
+  when: inventory_hostname in groups["develop"]
+  run_once: true
+
+- name: 检查本地Python安装包文件是否存在
+  stat:
+    path: "{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz"
+  register: file_stat
+  when: inventory_hostname in groups["develop"]
+  run_once: true
+
+- name: 下载Python安装包文件
+  get_url:
+    url: https://www.python.org/ftp/python/{{ PYTHON_VERSION }}/Python-{{ PYTHON_VERSION }}.tgz
+    dest: "{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz"
+    mode: 0755
+  when: not file_stat.stat.exists and inventory_hostname in groups["develop"]
+  run_once: true
+- block:
+  - name: Check Python{{ PYTHON_VERSION }} if install
+    shell: "{{ INSTALL_PATH }}/bin/python3 -V"
+    register: python_version
+    failed_when: 'not "Python {{ PYTHON_VERSION }}" == python_version.stdout'
+  - name: 分发Python源码包
+    synchronize: src={{ packages }}/Python-{{ PYTHON_VERSION }}.tgz dest={{ packages }}/Python-{{ PYTHON_VERSION }}.tgz
+
+  - name: 解压{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz
+    unarchive:
+      src: '{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz'
+      dest: '{{ packages }}'
+      remote_src: yes
+    when: 'not "Python {{ PYTHON_VERSION }}" == python_version.stdout'
+
+  - name: 安装 Python-{{ PYTHON_VERSION }}
+    command: "{{ item }} chdir={{ packages }}/Python-{{ PYTHON_VERSION }}"
+    with_items:
+      - ./configure --prefix={{ INSTALL_PATH }}
+      - make
+      - make install
+    when: 'not "Python {{ PYTHON_VERSION }}" == python_version.stdout'
+
+  - name: 获取Python版本
+    shell: "{{ INSTALL_PATH }}/bin/python3 -V"
+    register: python_version
+    failed_when: 'not "Python {{ PYTHON_VERSION }}" == python_version.stdout'
+
+  - name: 设置Pip源
+    shell: "{{ INSTALL_PATH }}/bin/python3 -m pip config set global.index-url {{ PIP_INDEX_URL }}"
+    when: "{{ SET_PIP_INDEX }}"
+  when: inventory_hostname in groups["nodes"]

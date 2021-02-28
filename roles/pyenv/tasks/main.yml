@@ -1,0 +1,91 @@
+- name: 安装依赖
+  yum:
+    name:
+      - zlib-devel
+      - bzip2
+      - bzip2-devel
+      - readline-devel
+      - sqlite
+      - sqlite-devel
+      - openssl-devel
+      - xz
+      - xz-devel
+      - libffi-devel
+      - findutils
+      - gcc
+      - gcc-c++
+      - git
+      - curl
+      - libffi-devel
+      - wget
+    state: present
+    validate_certs: no
+  when: inventory_hostname in groups["nodes"]
+
+- name: 检查离线安装包是否存在
+  stat:
+    path: "{{ packages }}/pyenv-package.tar.gz"
+  register: file_stat
+  when: inventory_hostname in groups["develop"]
+  run_once: true
+
+- name: 下载Python安装包文件
+  command: "{{ item }} chdir={{ packages }}/"
+  with_items:
+    "curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash"
+  when: not file_stat.stat.exists and inventory_hostname in groups["develop"]
+  run_once: true
+
+- name: 下载离线安装脚本
+  get_url:
+    url: https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-offline-installer
+    dest: "{{ packages }}/pyenv-offline-installer.sh"
+    mode: 777
+    use_proxy: "{{ USE_PROXY }}"
+    validate_certs: no
+  environment:
+    http_proxy: "{{ PROXY_HOST }}"
+    https_proxy: "{{ PROXY_HOST }}"
+  when: inventory_hostname in groups["develop"]
+
+- block:
+  - name: 分发离线安装包
+    synchronize: src={{ packages }}/pyenv-package.tar.gz dest={{ packages }}/pyenv-package.tar.gz
+
+  - name: 分发离线安装脚本
+    synchronize:
+      src: "{{ packages }}/pyenv-offline-installer.sh"
+      dest: "{{ packages }}/pyenv-offline-installer.sh"
+      rsync_opts:
+        - "--chmod=F777"
+  - name: 检查pyenv 是否已经安装
+    stat:
+      path: ~/.pyenv
+    register: file_stat
+
+  - name: 安装 pyenv
+    command: "{{ item }} chdir={{ packages }}"
+    with_items:
+      - ./pyenv-offline-installer.sh
+    when: not file_stat.stat.exists
+
+  - name: 配置环境变量
+    lineinfile:
+      dest: ~/.bashrc
+      regexp: "^{{ item }}"
+      line: "{{ item }}"
+    with_items:
+      - 'export PATH=~/.pyenv/bin:$PATH'
+      - 'eval "$(pyenv init -)"'
+      - 'eval "$(pyenv virtualenv-init -)"'
+
+  - name: 获取Pyenv版本
+    shell: "source ~/.bashrc && pyenv --version"
+    register: pyenv_version
+
+  - name: 显示pyenv版本
+    debug:
+      msg: "{{ pyenv_version.stdout }}"
+  when: inventory_hostname in groups["nodes"]
+
+
