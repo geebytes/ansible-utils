@@ -1,0 +1,106 @@
+- name: 创建相关目录
+  file: name={{ item }} state=directory
+  with_items:
+    - "{{ DOCKER_INSTALL_PATH }}"
+    - "{{ DOCKER_DATA_PATH }}"
+    - "{{ DOCKER_CONFIG_PATH }}"
+    - "{{ SOCKET_FILE_PATH }}"
+    - "{{ LOGS_DIR }}"
+
+- name: 检查本地dockerd二进制安装包是否存在
+  stat:
+    path: "{{ packages }}/docker-{{ DOCKER_VERSION }}.tgz"
+  register: file_stat
+  when: inventory_hostname in groups["develop"]
+
+- name: 下载docker二进制安装包
+  get_url:
+    url: "https://download.docker.com/linux/static/stable/x86_64/docker-{{ DOCKER_VERSION }}.tgz"
+    dest: "{{ packages }}/docker-{{ DOCKER_VERSION }}.tgz"
+    mode: 0755
+    use_proxy: "{{ USE_PROXY }}"
+    validate_certs: no
+  environment:
+    http_proxy: "{{ PROXY_HOST }}"
+    https_proxy: "{{ PROXY_HOST }}"
+  when: inventory_hostname in groups["develop"] and not file_stat.stat.exists
+
+- name: 检查本地docker-composed二进制包是否存在
+  stat:
+    path: "{{ packages }}/docker-compose-Linux-x86_64"
+  register: docker_compose_stat
+
+- name: 下载docker-composed二进制安装包
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ DOCKER_COMPOSE }}/docker-compose-Linux-x86_64"
+    dest: "{{ packages }}/docker-compose"
+    mode: 0755
+    use_proxy: "{{ USE_PROXY }}"
+    validate_certs: no
+  environment:
+    http_proxy: "{{ PROXY_HOST }}"
+    https_proxy: "{{ PROXY_HOST }}"
+  when: inventory_hostname in groups["develop"] and not docker_compose_stat.stat.exists
+
+- block:
+  - name: 检查安装包是否已经存在
+    stat:
+      path: "{{ packages }}/docker-{{ DOCKER_VERSION }}.tgz"
+    register: docker_tgz_stat
+
+  - name: 开始分发docker二进包
+    synchronize: src={{ packages }}/docker-{{ DOCKER_VERSION }}.tgz dest={{ packages }}/docker-{{ DOCKER_VERSION }}.tgz
+    when: not docker_tgz_stat.stat.exists
+
+  - name: 解压{{ packages }}/docker-{{ DOCKER_VERSION }}.tgz
+    unarchive:
+      src: '{{ packages }}/docker-{{ DOCKER_VERSION }}.tgz'
+      dest: '{{ DOCKER_INSTALL_PATH }}'
+      remote_src: yes
+
+  - name: 添加可执行权限
+    file:
+      path: "{{ DOCKER_INSTALL_PATH }}/docker"
+      mode: 0775
+      recurse: yes
+
+  - name: 分发docker-compose二进制包
+    synchronize:
+      src: "{{ packages }}/docker-compose"
+      dest: "{{ DOCKER_INSTALL_PATH }}/docker/docker-compose"
+      rsync_opts:
+        - "--chmod=F755"
+
+  - name: 配置环境变量
+    lineinfile:
+      dest: ~/.bashrc
+      regexp: "^{{ item }}"
+      line: "{{ item }}"
+    with_items:
+      - 'export PATH={{ DOCKER_INSTALL_PATH }}/docker:$PATH'
+
+  - name: 检查docker版本
+    shell: "{{ DOCKER_INSTALL_PATH }}/docker/docker -v"
+    register: docker_version
+    failed_when: 'not docker_version.stdout is search("{{ DOCKER_VERSION }}")'
+
+  - name: 分发docker配置文件
+    template: src=daemon.json.j2 dest={{ DOCKER_CONFIG_PATH }}/daemon.json mode=0655
+
+  - name: 分发docker启动脚本
+    template: src=start_docker.sh.j2 dest={{ DOCKER_INSTALL_PATH }}/start_docker.sh mode=0755
+
+  - name: 分发docker supervisor配置
+    template: src=docker.ini.j2 dest={{ PROGRAM_INI_PATH }}/docker.ini mode=0644
+
+  - name: supervisord加载配置
+    shell: "supervisorctl -c {{ SUPERVISORD_CONF }} update && supervisorctl -c {{ SUPERVISORD_CONF }} restart docker"
+
+  - name: 检查supervisord状态
+    shell: "supervisorctl -c {{ SUPERVISORD_CONF }} status docker"
+    register: docker_status
+    failed_when: 'not docker_status.stdout is search("RUNNING")'
+
+  - name: docker命令自动补全
+    copy: src=docker dest=/etc/bash_completion.d/docker mode=0644
+  when: inventory_hostname in groups["nodes"]

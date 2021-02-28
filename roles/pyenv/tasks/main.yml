@@ -33,7 +33,7 @@
   command: "{{ item }} chdir={{ packages }}/"
   with_items:
     "curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash"
-  when: not file_stat.stat.exists and inventory_hostname in groups["develop"]
+  when: inventory_hostname in groups["develop"] and not file_stat.stat.exists
   run_once: true
 
 - name: 下载离线安装脚本

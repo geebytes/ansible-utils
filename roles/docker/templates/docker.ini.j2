@@ -1,0 +1,18 @@
+[program:docker]
+user={{ SUPERVISORD_USER }}
+command={{ DOCKER_INSTALL_PATH }}/start_docker.sh
+process_name=%(program_name)s
+priority=1
+autostart=true
+startretries=10
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stdout_logfile_maxbytes=1MB
+stdout_logfile_backups=10
+stdout_capture_maxbytes=1MB
+stderr_logfile_maxbytes=1MB
+stderr_logfile_backups=10
+stderr_capture_maxbytes=1MB
+stdout_logfile={{ LOGS_DIR }}/docker.log
+stderr_logfile={{ LOGS_DIR }}/docker_error.log

@@ -1,0 +1,37 @@
+DOCKER_VERSION: "18.09.9"
+
+DOCKER_COMPOSE: "1.28.5"
+
+DOCKER_INSTALL_PATH: "/data/work/usr/bin"
+
+DOCKER_DATA_PATH: "/data/work/docker"
+
+DOCKER_CONFIG_PATH: "/data/work/etc/docker"
+
+SOCKET_FILE_PATH: "/data/work/run"
+
+LOGS_DIR: "/data/work/logs/docker"
+
+SUPERVISORD_USER: "root"
+
+
+PROXY_HOST: 192.168.31.65:1080
+USE_PROXY: yes
+
+# 国内镜像加速
+
+REG_MIRROR_1: "https://registry.docker-cn.com"
+REG_MIRROR_2: "https://docker.mirrors.ustc.edu.cn"
+
+# docker日志相关
+
+LOG_DRIVER: "json-file"
+LOG_LEVEL: "warn"
+LOG_MAX_SIZE: "10m"
+LOG_MAX_FILE: 3
+
+# docker容器存储目录
+STORAGE_DIR: "/matrix/data/docker"
+
+# docekr 存储驱动
+STORAGE_DIV: "overlay2"

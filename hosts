@@ -15,5 +15,10 @@ work_dir="/data/work/platform/source/matrix/platform/source/ansible-utils"
 
 # 各类源码包
 packages="/data/work/platform/source/matrix/platform/source/ansible-utils/packages"
+# supervisord配置文件路径
+PROGRAM_INI_PATH="/data/work/etc/supervisord"
+
+# supervisord config file
+SUPERVISORD_CONF = "/data/work/etc/supervisord.conf"
 
 

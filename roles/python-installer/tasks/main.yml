@@ -46,7 +46,7 @@
     url: https://www.python.org/ftp/python/{{ PYTHON_VERSION }}/Python-{{ PYTHON_VERSION }}.tgz
     dest: "{{ packages }}/Python-{{ PYTHON_VERSION }}.tgz"
     mode: 0755
-  when: not file_stat.stat.exists and inventory_hostname in groups["develop"]
+  when: inventory_hostname in groups["develop"] and not file_stat.stat.exists
   run_once: true
 - block:
   - name: Check Python{{ PYTHON_VERSION }} if install
